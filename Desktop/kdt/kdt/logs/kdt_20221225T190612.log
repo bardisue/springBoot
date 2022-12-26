@@ -1,0 +1,5 @@
+19:06:13.095 [main] DEBUG o.prgrms.kdt.order.OrderProperties - [OrderProperties] version -> {0}
+19:06:13.098 [main] DEBUG o.prgrms.kdt.order.OrderProperties - [OrderProperties] minimumOrderAmount -> {0}
+19:06:13.099 [main] DEBUG o.prgrms.kdt.order.OrderProperties - [OrderProperties] supportVendors -> {0}
+19:06:13.099 [main] DEBUG o.prgrms.kdt.order.OrderProperties - [OrderProperties] description -> {0}
+19:06:13.152 [main] INFO  org.prgrms.kdt.OrderTester - logger name => org.prgrms.kdt.OrderTester
