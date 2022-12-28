@@ -3,6 +3,7 @@ package org.prgrms.kdt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.sql.*;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -63,6 +64,25 @@ public record JdbcCustomerRepository() {
 
         return names;
     }
+    public List<UUID> findAllIds(){
+        List<UUID> uuids = new ArrayList<>();
+        try(
+                var connection = DriverManager.getConnection("jdbc:mysql://localhost/order_mgmt", "root", "root1234!");
+                var statement = connection.prepareStatement(SELECT_ALL_SQL);
+                var resultSet = statement.executeQuery();
+        ){
+            while(resultSet.next()){
+                var customerName = resultSet.getString("name");
+                var customerId = toUUID(resultSet.getBytes("customer_id"));
+                var createdAt = resultSet.getTimestamp("created_at").toLocalDateTime();
+                uuids.add(customerId);
+            }
+        } catch (SQLException throwable){
+            logger.error("Got error while closing connection", throwable);
+        }
+
+        return uuids;
+    }
 
 
     public int insertCustomer(UUID customerId, String name, String email){
@@ -106,21 +126,29 @@ public record JdbcCustomerRepository() {
         return 0;
     }
 
+    static UUID toUUID(byte[] bytes){
+        var byteBuffer = ByteBuffer.wrap(bytes);
+        return new UUID(byteBuffer.getLong(), byteBuffer.getLong());
+    }
+
 
     public static void main(String[] args){
         var customerRepository = new JdbcCustomerRepository();
 
         var count = customerRepository.deleteAllCustomers();
         logger.info("deleted count{}", count);
-
-        customerRepository.insertCustomer(UUID.randomUUID(), "new-user", "new-user@gamil.com");
+        var customerId = UUID.randomUUID();
+        logger.info("created customerId -? {}", customerId);
+        logger.info("created UUID Version -? {}", customerId.version());
+        customerRepository.insertCustomer(customerId, "new-user", "new-user@gamil.com");
+        /***
         var customer2 = UUID.randomUUID();
         customerRepository.insertCustomer(customer2, "new-user2", "new-user2@gamil.com");
 
         customerRepository.findALLName().forEach(v -> logger.info("Found name : {}", v));
 
         customerRepository.updateCustomerName(customer2, "updated-user2");
-        
-        customerRepository.findALLName().forEach(v -> logger.info("Found name : {}", v));
+***/
+        customerRepository.findAllIds().forEach(v -> logger.info("Found customerID : {} and version :{}", v, v.version()));
     }
 }
