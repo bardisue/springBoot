@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.sql.*;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,7 +17,7 @@ public record JdbcCustomerRepository() {
     private static final Logger logger = LoggerFactory.getLogger(JdbcCustomerRepository.class);
     private static final String SELECT_BY_NAME_SQL = "select * from customers Where name = ?";//" and email = ?";
     private static final String SELECT_ALL_SQL = "select * from customers";
-    private static final String INSERT_SQL = "INSERT INTO customers(customer_id, name, email) VALUES (UUID_TO_BIN(?), ?, ?)";
+    private static final String INSERT_SQL = "INSERT INTO customers(customer_id, name, email, last_login_at) VALUES (UUID_TO_BIN(?), ?, ?, ?)";
     private static final String UPDATE_BY_ID_SQL = "UPDATE customers SET name = ? WHERE customer_id = UUID_TO_BIN(?)";
     private static final String DELETE_ALL_SQL = "DELETE FROM customers";
     public List<String> findNames(String name){
@@ -45,7 +47,6 @@ public record JdbcCustomerRepository() {
 
     public List<String> findALLName(){
         List<String> names = new ArrayList<>();
-
         try(
                 var connection = DriverManager.getConnection("jdbc:mysql://localhost/order_mgmt", "root", "root1234!");
                 var statement = connection.prepareStatement(SELECT_ALL_SQL);
@@ -61,7 +62,6 @@ public record JdbcCustomerRepository() {
         } catch (SQLException throwable){
             logger.error("Got error while closing connection", throwable);
         }
-
         return names;
     }
     public List<UUID> findAllIds(){
@@ -93,6 +93,7 @@ public record JdbcCustomerRepository() {
             statement.setBytes(1, customerId.toString().getBytes());
             statement.setString(2, name);
             statement.setString(3, email);
+            statement.setString(4, String.valueOf(LocalDateTime.now()));
             return statement.executeUpdate();
         } catch (SQLException throwable){
             logger.error("Got error while closing connection", throwable);
