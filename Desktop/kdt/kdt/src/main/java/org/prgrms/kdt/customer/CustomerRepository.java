@@ -11,6 +11,8 @@ public interface CustomerRepository {
 
     //
 
+    int count();
+
     List<Customer> findAll();
 
     Optional<Customer> findById(UUID customerId);
