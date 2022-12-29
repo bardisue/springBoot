@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 import javax.sql.DataSource;
@@ -15,9 +17,17 @@ import javax.sql.DataSource;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
+import com.wix.mysql.EmbeddedMysql;
+
+import static com.wix.mysql.EmbeddedMysql.anEmbeddedMysql;
+import static com.wix.mysql.ScriptResolver.classPathScript;
+import static com.wix.mysql.distribution.Version.v5_7_latest;
+import static com.wix.mysql.config.MysqldConfig.aMysqldConfig;
+import static com.wix.mysql.config.Charset.UTF8;
 
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
 
 @SpringJUnitConfig
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -29,12 +39,22 @@ class CustomerJdbcRepositoryTest {
             basePackages = {"org.prgrms.kdt.customer"}
     )
     static class Config{
+
         @Bean
         public DataSource dataSource(){
+        /***
+            return new EmbeddedDatabaseBuilder()
+                    .generateUniqueName(true)
+                    .setType(H2)
+                    .setScriptEncoding("UTF-8")
+                    .ignoreFailedDrops(true)
+                    .addScript("schema.sql")
+                    .build();
+        ***/
             var dataSource = DataSourceBuilder.create()
-                    .url("jdbc:mysql://localhost/order_mgmt")
-                    .username("root")
-                    .password("root1234!")
+                    .url("jdbc:mysql://localhost:2215/test-order_mgmt")
+                    .username("test")
+                    .password("test1234!")
                     .type(HikariDataSource.class)
                     .build();
 //            dataSource.setMaximumPoolSize(1000);
@@ -51,11 +71,32 @@ class CustomerJdbcRepositoryTest {
     @Autowired
     DataSource dataSource;
     Customer newCustomer;
+    EmbeddedMysql embeddedMysql;
+
     @BeforeAll
-    void clean(){
-        newCustomer = new Customer(UUID.randomUUID(), "test-user", "test-user@gmail.com", LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS));
-        customerJdbcRepository.deleteAll();
+    void setup(){
+        newCustomer = new Customer(UUID.randomUUID(),
+                "test-user",
+                "test-user@gmail.com",
+                LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        var mysqlConfig = aMysqldConfig(v5_7_latest)
+                .withCharset(UTF8)
+                .withPort(2215)
+                .withUser("test", "test1234!")
+                .withTimeZone("Asia/Seoul")
+                .build();
+        embeddedMysql = anEmbeddedMysql(mysqlConfig)
+                .addSchema("test-order_mgmt", classPathScript("schema.sql"))
+                .start();
+        //customerJdbcRepository.deleteAll();
     }
+
+
+    @AfterAll
+    void cleanup(){
+        embeddedMysql.stop();
+    }
+
     @Test
     @Order(1)
     public void testHikariConnectionPool(){
@@ -69,7 +110,7 @@ class CustomerJdbcRepositoryTest {
         customerJdbcRepository.insert(newCustomer);
 
         var retrievedCustomer = customerJdbcRepository.findById(newCustomer.getCustomerId());
-
+        System.out.println(newCustomer.getCreatedAt());
         assertThat(retrievedCustomer.isEmpty(), is(false));
         assertThat(retrievedCustomer.get(), samePropertyValuesAs(newCustomer));
     }
