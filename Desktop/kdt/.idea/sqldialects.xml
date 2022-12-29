@@ -6,5 +6,6 @@
   </component>
   <component name="SqlResolveMappings">
     <file url="file://$PROJECT_DIR$/kdt/src/main/java/org/prgrms/kdt/customer/CustomerJdbcRepository.java" scope="{&quot;node&quot;:{  &quot;@negative&quot;:&quot;1&quot;,  &quot;group&quot;:{   &quot;@kind&quot;:&quot;root&quot;,   &quot;node&quot;:{    &quot;name&quot;:{     &quot;@qname&quot;:&quot;dad616e6-2cf2-4560-8920-96580648fb52&quot;    },    &quot;group&quot;:{     &quot;@kind&quot;:&quot;schema&quot;,     &quot;node&quot;:{      &quot;name&quot;:{       &quot;@qname&quot;:&quot;order_mgmt&quot;      }     }    }   }  } }}" />
+    <file url="file://$PROJECT_DIR$/kdt/src/main/java/org/prgrms/kdt/customer/CustomerNamedJdbcRepository.java" scope="{&quot;node&quot;:{  &quot;@negative&quot;:&quot;1&quot;,  &quot;group&quot;:{   &quot;@kind&quot;:&quot;root&quot;,   &quot;node&quot;:{    &quot;name&quot;:{     &quot;@qname&quot;:&quot;dad616e6-2cf2-4560-8920-96580648fb52&quot;    },    &quot;group&quot;:{     &quot;@kind&quot;:&quot;schema&quot;,     &quot;node&quot;:{      &quot;name&quot;:{       &quot;@qname&quot;:&quot;order_mgmt&quot;      }     }    }   }  } }}" />
   </component>
 </project>
