@@ -51,7 +51,23 @@ public class CustomerJdbcRepository implements CustomerRepository {
 
     @Override
     public Customer update(Customer customer) {
-        return null;
+        try(
+                var connection = dataSource.getConnection();
+                var statement = connection.prepareStatement("UPDATE customers SET name = ?, email = ?, last_login_at = ? WHERE customer_id = UUID_TO_BIN(?)");
+        ){
+            statement.setString(1, customer.getName());
+            statement.setString(2, customer.getEmail());
+            statement.setTimestamp(3, customer.getLastLoginAt() != null ? Timestamp.valueOf(customer.getCreatedAt()) : null);
+            statement.setBytes(4, customer.getCustomerId().toString().getBytes());
+            var executedUpdate = statement.executeUpdate();
+            if(executedUpdate != 1){
+                throw new RuntimeException("Nothing was updated");
+            }
+            return customer;
+        } catch (SQLException throwable){
+            logger.error("Got error while closing connection", throwable);
+            throw new RuntimeException(throwable);
+        }
     }
 
     @Override
