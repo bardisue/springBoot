@@ -2,11 +2,14 @@ package org.prgrms.kdt.customer;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -31,7 +34,7 @@ import static org.hamcrest.Matchers.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CustomerNamedJdbcRepositoryTest {
-
+    private static final Logger logger = LoggerFactory.getLogger(CustomerNamedJdbcRepositoryTest.class);
     @Configuration
     @ComponentScan(
             basePackages = {"org.prgrms.kdt.customer"}
@@ -71,7 +74,7 @@ class CustomerNamedJdbcRepositoryTest {
 
     }
     @Autowired
-    CustomerNamedJdbcRepository customerNamedJdbcRepository;
+    CustomerNamedJdbcRepository customerJdbcRepository;
     @Autowired
     DataSource dataSource;
     Customer newCustomer;
@@ -111,9 +114,14 @@ class CustomerNamedJdbcRepositoryTest {
     @Order(2)
     @DisplayName("고객을 추가할 수 있다.")
     public void testInsert() {
-        customerNamedJdbcRepository.insert(newCustomer);
 
-        var retrievedCustomer = customerNamedJdbcRepository.findById(newCustomer.getCustomerId());
+        try {
+            customerJdbcRepository.insert(newCustomer);
+        }catch (BadSqlGrammarException e){
+            logger.error("Got BadSqlGrammarException error code -> {}", e.getSQLException().getErrorCode(), e);
+        }
+
+        var retrievedCustomer = customerJdbcRepository.findById(newCustomer.getCustomerId());
         System.out.println(newCustomer.getCreatedAt());
         assertThat(retrievedCustomer.isEmpty(), is(false));
         assertThat(retrievedCustomer.get(), samePropertyValuesAs(newCustomer));
@@ -123,7 +131,7 @@ class CustomerNamedJdbcRepositoryTest {
     @Order(3)
     @DisplayName("전체 고객을 조회할 수 있다")
     public void testFindAll() throws InterruptedException {
-        var customers = customerNamedJdbcRepository.findAll();
+        var customers = customerJdbcRepository.findAll();
         assertThat(customers.isEmpty(), is(false));
     }
 
@@ -131,10 +139,10 @@ class CustomerNamedJdbcRepositoryTest {
     @Order(4)
     @DisplayName("이름으로 고객을 조회할 수 있다.")
     public void testFindByName() throws InterruptedException {
-        var customers = customerNamedJdbcRepository.findByName(newCustomer.getName());
+        var customers = customerJdbcRepository.findByName(newCustomer.getName());
         assertThat(customers.isEmpty(), is(false));
 
-        var unknown = customerNamedJdbcRepository.findByName("unknown-user");
+        var unknown = customerJdbcRepository.findByName("unknown-user");
         assertThat(unknown.isEmpty(), is(true));
 
     }
@@ -143,10 +151,10 @@ class CustomerNamedJdbcRepositoryTest {
     @Order(5)
     @DisplayName("이메일로 고객을 조회할 수 있다.")
     public void testFindByEmail() throws InterruptedException {
-        var customers = customerNamedJdbcRepository.findByByEmail(newCustomer.getEmail());
+        var customers = customerJdbcRepository.findByByEmail(newCustomer.getEmail());
         assertThat(customers.isEmpty(), is(false));
 
-        var unknown = customerNamedJdbcRepository.findByByEmail("asf@naver.com");
+        var unknown = customerJdbcRepository.findByByEmail("asf@naver.com");
         assertThat(unknown.isEmpty(), is(true));
 
     }
@@ -156,17 +164,17 @@ class CustomerNamedJdbcRepositoryTest {
     @DisplayName("고객을 수정할 수 있다")
     public void testUpdate(){
         newCustomer.changeName("updated-user");
-        customerNamedJdbcRepository.update(newCustomer);
+        customerJdbcRepository.update(newCustomer);
 
-        var all = customerNamedJdbcRepository.findAll();
+        var all = customerJdbcRepository.findAll();
         assertThat(all, hasSize(1));
         assertThat(all, everyItem(samePropertyValuesAs(newCustomer)));
 
-        var retrievedCustomer = customerNamedJdbcRepository.findById(newCustomer.getCustomerId());
+        var retrievedCustomer = customerJdbcRepository.findById(newCustomer.getCustomerId());
         assertThat(retrievedCustomer.isEmpty(), is(false));
         assertThat(retrievedCustomer.get(), samePropertyValuesAs(newCustomer));
 
-        var unknown = customerNamedJdbcRepository.findByByEmail("unknown-user@gmail.com");
+        var unknown = customerJdbcRepository.findByByEmail("unknown-user@gmail.com");
         assertThat(unknown.isEmpty(), is(true));
     }
 }

@@ -1,5 +1,6 @@
 package org.prgrms.kdt;
 
+import org.prgrms.kdt.customer.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,6 +128,43 @@ public record JdbcCustomerRepository() {
         return 0;
     }
 
+    public void transactionTest(Customer customer){
+        String updateNameSql = "UPDATE customers SET name = ? WHERE customer_id = UUID_TO_BIN(?)";
+        String updateEmailSql = "UPDATE customers SET email = ? WHERE customer_id = UUID_TO_BIN(?)";
+
+        Connection connection = null;
+
+        try {
+            connection = DriverManager.getConnection("jdbc:mysql://localhost/order_mgmt", "root", "root1234!");
+            connection.setAutoCommit(false);
+            try(
+                    var updateNameStatement = connection.prepareStatement(updateNameSql);
+                    var updateEmailStatement = connection.prepareStatement(updateEmailSql);
+            ){
+                updateNameStatement.setString(1, customer.getName());
+                updateNameStatement.setBytes(2, customer.getCustomerId().toString().getBytes());
+                updateNameStatement.executeUpdate();
+
+                updateEmailStatement.setString(1, customer.getEmail());
+                updateEmailStatement.setBytes(2, customer.getCustomerId().toString().getBytes());
+                updateEmailStatement.executeUpdate();
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException exception){
+            if(connection!=null){
+                try{
+                    connection.rollback();
+                    connection.close();
+                } catch (SQLException throwable){
+                    logger.error("Got error while closing connection", throwable);
+                    throw new RuntimeException(exception);
+                }
+            }
+            logger.error("Got error while closing connection", exception);
+            throw new RuntimeException(exception);
+        }
+    }
+
     static UUID toUUID(byte[] bytes){
         var byteBuffer = ByteBuffer.wrap(bytes);
         return new UUID(byteBuffer.getLong(), byteBuffer.getLong());
@@ -135,21 +173,29 @@ public record JdbcCustomerRepository() {
 
     public static void main(String[] args){
         var customerRepository = new JdbcCustomerRepository();
+       // var customerId = UUID.randomUUID();
+      //  customerRepository.insertCustomer(customerId, "new-user2", "new-user2@gamil.com");
 
+        customerRepository.transactionTest(
+                new Customer(UUID.fromString("99b131dd-b2d7-42d2-a1fe-59399e3c2188"), "update-user", "new-user2@gamil.com", LocalDateTime.now()));
+
+
+
+/***
         var count = customerRepository.deleteAllCustomers();
         logger.info("deleted count{}", count);
         var customerId = UUID.randomUUID();
         logger.info("created customerId -? {}", customerId);
         logger.info("created UUID Version -? {}", customerId.version());
         customerRepository.insertCustomer(customerId, "new-user", "new-user@gamil.com");
-        /***
         var customer2 = UUID.randomUUID();
         customerRepository.insertCustomer(customer2, "new-user2", "new-user2@gamil.com");
 
         customerRepository.findALLName().forEach(v -> logger.info("Found name : {}", v));
 
         customerRepository.updateCustomerName(customer2, "updated-user2");
-***/
+
         customerRepository.findAllIds().forEach(v -> logger.info("Found customerID : {} and version :{}", v, v.version()));
+        ***/
     }
 }
