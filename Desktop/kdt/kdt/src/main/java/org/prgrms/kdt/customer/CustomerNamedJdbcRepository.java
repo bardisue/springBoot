@@ -27,8 +27,6 @@ public class CustomerNamedJdbcRepository implements CustomerRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
-    private final TransactionTemplate transactionTemplate;
-
     private RowMapper<Customer> customerRowMapper = (resultSet, i) -> {
         var customerName = resultSet.getString("name");
         var email = resultSet.getString("email");
@@ -39,9 +37,8 @@ public class CustomerNamedJdbcRepository implements CustomerRepository {
         return new Customer(customerId, customerName, email, lastLoginAt, createdAt);
     };
 
-    public CustomerNamedJdbcRepository(NamedParameterJdbcTemplate jdbcTemplate, TransactionTemplate transactionTemplate) {
+    public CustomerNamedJdbcRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.transactionTemplate = transactionTemplate;
     }
 
     private Map<String, Object> toParamMap(Customer customer){
@@ -135,7 +132,7 @@ public class CustomerNamedJdbcRepository implements CustomerRepository {
             return Optional.empty();
         }
     }
-
+/***
     public void testTransaction(Customer customer){
         transactionTemplate.execute(new TransactionCallbackWithoutResult() {
             @Override
@@ -145,7 +142,7 @@ public class CustomerNamedJdbcRepository implements CustomerRepository {
             }
         });
     }
-
+***/
     @Override
     public void deleteAll() {
         var update = jdbcTemplate.update("DELETE FROM customers", Collections.emptyMap());
